@@ -1,11 +1,7 @@
 
--- Practical Assignment 01 "Complex select"
-
 CREATE DATABASE PA01;
 
 USE PA01;
-
--- Creating tables
 
 CREATE TABLE Clients (
     ClientID INT AUTO_INCREMENT PRIMARY KEY,
@@ -30,7 +26,6 @@ CREATE TABLE Orders (
     FOREIGN KEY (ProductID) REFERENCES Products(ProductID)
 );
 
--- Insert data into Clients
 INSERT INTO Clients (ClientName, Email, Phone) VALUES
 ('John Doe', 'john.doe@example.com', '555-1234'),
 ('Jane Smith', 'jane.smith@example.com', '555-5678'),
@@ -38,7 +33,6 @@ INSERT INTO Clients (ClientName, Email, Phone) VALUES
 ('Bob Brown', 'bob.brown@example.com', '555-4321'),
 ('Charlie Black', 'charlie.black@example.com', '555-1122');
 
--- Insert data into Products
 INSERT INTO Products (ProductName, Price) VALUES
 ('Laptop', 999.99),
 ('Smartphone', 499.99),
@@ -46,7 +40,6 @@ INSERT INTO Products (ProductName, Price) VALUES
 ('Smartwatch', 199.99),
 ('Headphones', 99.99);
 
--- Insert data into Orders
 INSERT INTO Orders (ClientID, ProductID, OrderDate, Quantity) VALUES
 (1, 1, '2024-09-01', 1),
 (1, 3, '2024-09-01', 2),
@@ -59,27 +52,108 @@ INSERT INTO Orders (ClientID, ProductID, OrderDate, Quantity) VALUES
 (5, 2, '2024-08-28', 1),
 (3, 1, '2024-08-30', 1);
 
+CREATE TABLE Categories (
+    CategoryID INT AUTO_INCREMENT PRIMARY KEY,
+    CategoryName VARCHAR(100)
+);
 
-/*
- * This query will return the total quantity of
- * each product ordered by each client
- * and the total amount spent by them on those products, sorted by the highest spenders first.
- */
+CREATE TABLE Suppliers (
+    SupplierID INT AUTO_INCREMENT PRIMARY KEY,
+    SupplierName VARCHAR(100),
+    ContactInfo VARCHAR(100)
+);
+
+INSERT INTO Categories (CategoryName) VALUES
+('Electronics'),
+('Accessories'),
+('Wearable Devices');
+
+INSERT INTO Suppliers (SupplierName, ContactInfo) VALUES
+('TechSupply Inc', 'tech@supply.com'),
+('GadgetsCo', 'contact@gadgets.com');
+
+ALTER TABLE Products ADD CategoryID INT;
+ALTER TABLE Products ADD SupplierID INT;
+ALTER TABLE Products ADD FOREIGN KEY (CategoryID) REFERENCES Categories(CategoryID);
+ALTER TABLE Products ADD FOREIGN KEY (SupplierID) REFERENCES Suppliers(SupplierID);
+
 
 SELECT
     c.ClientName,
     p.ProductName,
+    cat.CategoryName,
+    s.SupplierName,
     SUM(o.Quantity) AS TotalQuantity,
     SUM(o.Quantity * p.Price) AS TotalSpent
 FROM
     Orders o
-JOIN
+LEFT JOIN
     Clients c ON o.ClientID = c.ClientID
-JOIN
+LEFT JOIN
     Products p ON o.ProductID = p.ProductID
+LEFT JOIN
+    Categories cat ON p.CategoryID = cat.CategoryID
+LEFT JOIN
+    Suppliers s ON p.SupplierID = s.SupplierID
 WHERE
     o.OrderDate >= '2024-08-28'
 GROUP BY
-    c.ClientName, p.ProductName
+    c.ClientName, p.ProductName, cat.CategoryName, s.SupplierName
 ORDER BY
     TotalSpent DESC;
+
+SELECT ClientName, TotalSpent
+FROM (
+    SELECT
+        c.ClientName,
+        SUM(o.Quantity * p.Price) AS TotalSpent
+    FROM
+        Orders o
+    JOIN
+        Clients c ON o.ClientID = c.ClientID
+    JOIN
+        Products p ON o.ProductID = p.ProductID
+    WHERE
+        o.OrderDate >= '2024-08-28'
+    GROUP BY
+        c.ClientName
+
+    UNION ALL
+
+    SELECT
+        c.ClientName,
+        SUM(o.Quantity * p.Price) AS TotalSpent
+    FROM
+        Orders o
+    JOIN
+        Clients c ON o.ClientID = c.ClientID
+    JOIN
+        Products p ON o.ProductID = p.ProductID
+    WHERE
+        o.OrderDate < '2024-08-28'
+    GROUP BY
+        c.ClientName
+) AS total_spent_clients;
+
+
+
+WITH OrderSummary AS (
+    SELECT
+        c.ClientName,
+        p.ProductName,
+        SUM(o.Quantity) AS TotalQuantity,
+        SUM(o.Quantity * p.Price) AS TotalSpent
+    FROM
+        Orders o
+    JOIN
+        Clients c ON o.ClientID = c.ClientID
+    JOIN
+        Products p ON o.ProductID = p.ProductID
+    WHERE
+        o.OrderDate >= '2024-08-28'
+    GROUP BY
+        c.ClientName, p.ProductName
+)
+SELECT *
+FROM OrderSummary
+ORDER BY TotalSpent DESC;
