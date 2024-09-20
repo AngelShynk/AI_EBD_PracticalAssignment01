@@ -1,46 +1,45 @@
+CREATE DATABASE VyshyvAI;
 
-CREATE DATABASE PA01;
+USE VyshyvAI;
 
-USE PA01;
-
-CREATE TABLE Clients (
-    ClientID INT AUTO_INCREMENT PRIMARY KEY,
-    ClientName VARCHAR(100),
+CREATE TABLE Customers (
+    CustomerID INT AUTO_INCREMENT PRIMARY KEY,
+    CustomerName VARCHAR(100),
     Email VARCHAR(100),
     Phone VARCHAR(20)
 );
 
-CREATE TABLE Products (
-    ProductID INT AUTO_INCREMENT PRIMARY KEY,
-    ProductName VARCHAR(100),
+CREATE TABLE Vyshyvanky (
+    VyshyvankaID INT AUTO_INCREMENT PRIMARY KEY,
+    VyshyvankaName VARCHAR(100),
     Price DECIMAL(10, 2)
 );
 
 CREATE TABLE Orders (
     OrderID INT AUTO_INCREMENT PRIMARY KEY,
-    ClientID INT,
-    ProductID INT,
+    CustomerID INT,
+    VyshyvankaID INT,
     OrderDate DATE,
     Quantity INT,
-    FOREIGN KEY (ClientID) REFERENCES Clients(ClientID),
-    FOREIGN KEY (ProductID) REFERENCES Products(ProductID)
+    FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID),
+    FOREIGN KEY (VyshyvankaID) REFERENCES Vyshyvanky(VyshyvankaID)
 );
 
-INSERT INTO Clients (ClientName, Email, Phone) VALUES
-('John Doe', 'john.doe@example.com', '555-1234'),
-('Jane Smith', 'jane.smith@example.com', '555-5678'),
-('Alice Johnson', 'alice.johnson@example.com', '555-8765'),
-('Bob Brown', 'bob.brown@example.com', '555-4321'),
-('Charlie Black', 'charlie.black@example.com', '555-1122');
+INSERT INTO Customers (CustomerName, Email, Phone) VALUES
+('Oksana Petrenko', 'oksana.petrenko@example.com', '555-0011'),
+('Ivan Hrytsenko', 'ivan.hrytsenko@example.com', '555-0022'),
+('Svitlana Mykhalchuk', 'svitlana.mykhalchuk@example.com', '555-0033'),
+('Petro Kovalchuk', 'petro.kovalchuk@example.com', '555-0044'),
+('Kateryna Kozak', 'kateryna.kozak@example.com', '555-0055');
 
-INSERT INTO Products (ProductName, Price) VALUES
-('Laptop', 999.99),
-('Smartphone', 499.99),
-('Tablet', 299.99),
-('Smartwatch', 199.99),
-('Headphones', 99.99);
+INSERT INTO Vyshyvanky (VyshyvankaName, Price) VALUES
+('Traditional Embroidery', 1200.00),
+('Modern Style Vyshyvanka', 950.00),
+('Children’s Vyshyvanka', 750.00),
+('Custom Design Vyshyvanka', 1500.00),
+('Casual Vyshyvanka', 850.00);
 
-INSERT INTO Orders (ClientID, ProductID, OrderDate, Quantity) VALUES
+INSERT INTO Orders (CustomerID, VyshyvankaID, OrderDate, Quantity) VALUES
 (1, 1, '2024-09-01', 1),
 (1, 3, '2024-09-01', 2),
 (2, 2, '2024-08-31', 1),
@@ -64,95 +63,92 @@ CREATE TABLE Suppliers (
 );
 
 INSERT INTO Categories (CategoryName) VALUES
-('Electronics'),
-('Accessories'),
-('Wearable Devices');
+('Traditional'),
+('Modern'),
+('Custom Design');
 
 INSERT INTO Suppliers (SupplierName, ContactInfo) VALUES
-('TechSupply Inc', 'tech@supply.com'),
-('GadgetsCo', 'contact@gadgets.com');
+('UkrEmbroidery Inc', 'info@ukrembroidery.com'),
+('CraftMasters', 'support@craftmasters.com');
 
-ALTER TABLE Products ADD CategoryID INT;
-ALTER TABLE Products ADD SupplierID INT;
-ALTER TABLE Products ADD FOREIGN KEY (CategoryID) REFERENCES Categories(CategoryID);
-ALTER TABLE Products ADD FOREIGN KEY (SupplierID) REFERENCES Suppliers(SupplierID);
-
+ALTER TABLE Vyshyvanky ADD CategoryID INT;
+ALTER TABLE Vyshyvanky ADD SupplierID INT;
+ALTER TABLE Vyshyvanky ADD FOREIGN KEY (CategoryID) REFERENCES Categories(CategoryID);
+ALTER TABLE Vyshyvanky ADD FOREIGN KEY (SupplierID) REFERENCES Suppliers(SupplierID);
 
 SELECT
-    c.ClientName,
-    p.ProductName,
+    c.CustomerName,
+    v.VyshyvankaName,
     cat.CategoryName,
     s.SupplierName,
     SUM(o.Quantity) AS TotalQuantity,
-    SUM(o.Quantity * p.Price) AS TotalSpent
+    SUM(o.Quantity * v.Price) AS TotalSpent
 FROM
     Orders o
 LEFT JOIN
-    Clients c ON o.ClientID = c.ClientID
+    Customers c ON o.CustomerID = c.CustomerID
 LEFT JOIN
-    Products p ON o.ProductID = p.ProductID
+    Vyshyvanky v ON o.VyshyvankaID = v.VyshyvankaID
 LEFT JOIN
-    Categories cat ON p.CategoryID = cat.CategoryID
+    Categories cat ON v.CategoryID = cat.CategoryID
 LEFT JOIN
-    Suppliers s ON p.SupplierID = s.SupplierID
+    Suppliers s ON v.SupplierID = s.SupplierID
 WHERE
     o.OrderDate >= '2024-08-28'
 GROUP BY
-    c.ClientName, p.ProductName, cat.CategoryName, s.SupplierName
+    c.CustomerName, v.VyshyvankaName, cat.CategoryName, s.SupplierName
 ORDER BY
     TotalSpent DESC;
 
-SELECT ClientName, TotalSpent
+SELECT CustomerName, TotalSpent
 FROM (
     SELECT
-        c.ClientName,
-        SUM(o.Quantity * p.Price) AS TotalSpent
+        c.CustomerName,
+        SUM(o.Quantity * v.Price) AS TotalSpent
     FROM
         Orders o
     JOIN
-        Clients c ON o.ClientID = c.ClientID
+        Customers c ON o.CustomerID = c.CustomerID
     JOIN
-        Products p ON o.ProductID = p.ProductID
+        Vyshyvanky v ON o.VyshyvankaID = v.VyshyvankaID
     WHERE
         o.OrderDate >= '2024-08-28'
     GROUP BY
-        c.ClientName
+        c.CustomerName
 
     UNION ALL
 
     SELECT
-        c.ClientName,
-        SUM(o.Quantity * p.Price) AS TotalSpent
+        c.CustomerName,
+        SUM(o.Quantity * v.Price) AS TotalSpent
     FROM
         Orders o
     JOIN
-        Clients c ON o.ClientID = c.ClientID
+        Customers c ON o.CustomerID = c.CustomerID
     JOIN
-        Products p ON o.ProductID = p.ProductID
+        Vyshyvanky v ON o.VyshyvankaID = v.VyshyvankaID
     WHERE
         o.OrderDate < '2024-08-28'
     GROUP BY
-        c.ClientName
-) AS total_spent_clients;
-
-
+        c.CustomerName
+) AS total_spent_customers;
 
 WITH OrderSummary AS (
     SELECT
-        c.ClientName,
-        p.ProductName,
+        c.CustomerName,
+        v.VyshyvankaName,
         SUM(o.Quantity) AS TotalQuantity,
-        SUM(o.Quantity * p.Price) AS TotalSpent
+        SUM(o.Quantity * v.Price) AS TotalSpent
     FROM
         Orders o
     JOIN
-        Clients c ON o.ClientID = c.ClientID
+        Customers c ON o.CustomerID = c.CustomerID
     JOIN
-        Products p ON o.ProductID = p.ProductID
+        Vyshyvanky v ON o.VyshyvankaID = v.VyshyvankaID
     WHERE
         o.OrderDate >= '2024-08-28'
     GROUP BY
-        c.ClientName, p.ProductName
+        c.CustomerName, v.VyshyvankaName
 )
 SELECT *
 FROM OrderSummary
