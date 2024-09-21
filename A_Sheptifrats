@@ -1,0 +1,87 @@
+CREATE DATABASE h04;
+USE h04;
+
+CREATE TABLE authors (
+    author_id INT NOT NULL PRIMARY KEY,
+    first_name VARCHAR(120),
+    last_name VARCHAR(120),
+    motherland VARCHAR(120)
+);
+
+INSERT INTO authors (author_id, first_name, last_name, motherland) VALUES
+(1, 'George', 'Orwell', 'India'),
+(2, 'Joanne', 'Rowling', 'UK'),
+(3, 'Lewis', 'Carroll', 'UK');
+
+CREATE TABLE books (
+    book_id INT NOT NULL PRIMARY KEY,
+    book_page_amount INT,
+    book_name VARCHAR(120) NOT NULL,
+    book_year_present INT,
+    author_id INT,
+    FOREIGN KEY (author_id) REFERENCES authors(author_id)
+);
+
+INSERT INTO books (book_id, book_page_amount, book_name, book_year_present, author_id) VALUES
+(1, 123, '1984', 1949, 1),
+(2, 200, 'Harry Potter and the Philosopher\'s Stone', 1997, 2),
+(3, 321, 'Alice in Wonderland', 1865, 3);
+
+CREATE TABLE members_lib (
+    member_id INT NOT NULL PRIMARY KEY,
+    first_name VARCHAR(120),
+    last_name VARCHAR(120),
+    age INT
+);
+
+INSERT INTO members_lib (member_id, first_name, last_name, age) VALUES
+(1, 'Kate', 'Smith', 25),
+(2, 'Michael', 'Johnson', 30),
+(3, 'Ann', 'Brown', 22);
+
+CREATE TABLE category (
+    category_name VARCHAR(120),
+    top_100 BOOLEAN NOT NULL,
+    book_id INT,
+    FOREIGN KEY (book_id) REFERENCES books(book_id)
+);
+
+INSERT INTO category (category_name, top_100, book_id) VALUES
+('Fiction', TRUE, 1),
+('Fantasy', TRUE, 2),
+('Classic', FALSE, 3);
+
+CREATE TABLE loan (
+    loan_id INT NOT NULL PRIMARY KEY,
+    date_start DATE NOT NULL,
+    date_finish DATE NOT NULL,
+    book_id INT,
+    member_id INT,
+    FOREIGN KEY (book_id) REFERENCES books(book_id),
+    FOREIGN KEY (member_id) REFERENCES members_lib(member_id)  
+);
+
+INSERT INTO loan (loan_id, date_start, date_finish, book_id, member_id) VALUES
+(1, '2024-09-01', '2024-09-15', 1, 1),
+(2, '2024-09-10', '2024-09-20', 2, 2),    
+(3, '2024-09-10', '2024-09-20', 3, 3);
+
+WITH Info AS (
+    SELECT ml.member_id, ml.first_name, ml.last_name, b.book_name, 
+           a.first_name AS author_first_name, a.last_name AS author_last_name, 
+           c.category_name, l.date_start, l.date_finish
+    FROM members_lib ml
+    JOIN loan l ON ml.member_id = l.member_id
+    JOIN books b ON l.book_id = b.book_id
+    JOIN authors a ON b.author_id = a.author_id
+    JOIN category c ON b.book_id = c.book_id
+    WHERE l.date_start = '2024-09-10'
+)
+
+SELECT * FROM Info
+union
+SELECT ml.member_id, ml.first_name, ml.last_name, 
+       NULL AS book_name, NULL AS author_first_name, NULL AS author_last_name,
+       NULL AS category_name, NULL AS date_start, NULL AS date_finish
+FROM members_lib ml
+ORDER BY book_name ASC;
